@@ -1,0 +1,76 @@
+@startuml
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_LEFT_RIGHT()
+
+title Marketplace - C4 Container Diagram
+
+Person(buyer, "Покупатель", "Просматривает товары и оформляет заказы")
+Person(seller, "Продавец", "Управляет товарами")
+
+System_Ext(paymentProvider, "Payment Provider", "Внешняя система проведения платежей")
+System_Ext(emailProvider, "Email Provider", "Внешняя система отправки email")
+
+System_Boundary(marketplace, "Marketplace") {
+
+    Container(webApp, "Web Application", "Web / SPA", "Пользовательский интерфейс")
+
+    Container(apiGateway, "API Gateway", "REST API", "Единая точка входа")
+
+    Container(userService, "User Service", "REST API", "Управление пользователями")
+    ContainerDb(userDb, "User DB", "PostgreSQL", "Данные пользователей")
+
+    Container(catalogService, "Catalog Service", "Python / FastAPI", "Управление товарами")
+    ContainerDb(catalogDb, "Catalog DB", "PostgreSQL", "Каталог товаров")
+
+    Container(feedService, "Feed Service", "REST API", "Персонализированная лента")
+    ContainerDb(feedDb, "Feed DB", "PostgreSQL", "Предпочтения пользователей")
+
+    Container(orderService, "Order Service", "REST API", "Управление заказами")
+    ContainerDb(orderDb, "Order DB", "PostgreSQL", "Заказы и их статусы")
+
+    Container(paymentService, "Payment Service", "REST API", "Управление платежами")
+    ContainerDb(paymentDb, "Payment DB", "PostgreSQL", "Платежи и статусы")
+
+    Container(notificationService, "Notification Service", "Event Consumer", "Отправка уведомлений")
+    ContainerDb(notificationDb, "Notification DB", "PostgreSQL", "История уведомлений и статусы отправки")
+
+    Container(messageBroker, "Message Broker", "Kafka", "Передача асинхронных событий")
+}
+
+Rel(buyer, webApp, "Использует", "HTTPS")
+Rel(seller, webApp, "Использует", "HTTPS")
+
+Rel(webApp, apiGateway, "Отправляет запросы", "REST / HTTPS")
+
+Rel(apiGateway, userService, "Управление пользователями", "REST / sync")
+Rel(apiGateway, catalogService, "Работа с товарами", "REST / sync")
+Rel(apiGateway, feedService, "Получение ленты", "REST / sync")
+Rel(apiGateway, orderService, "Работа с заказами", "REST / sync")
+
+Rel(userService, userDb, "Читает и изменяет данные", "SQL")
+Rel(catalogService, catalogDb, "Читает и изменяет данные", "SQL")
+Rel(feedService, feedDb, "Читает и изменяет данные", "SQL")
+Rel(orderService, orderDb, "Читает и изменяет данные", "SQL")
+Rel(paymentService, paymentDb, "Читает и изменяет данные", "SQL")
+
+Rel(feedService, catalogService, "Получает товары для ленты", "REST / sync")
+Rel(orderService, catalogService, "Получает данные и цены товаров", "REST / sync")
+Rel(orderService, paymentService, "Создает платеж", "REST / sync")
+
+Rel(paymentService, paymentProvider, "Проводит платеж", "HTTPS / API")
+Rel(paymentProvider, paymentService, "Возвращает результат оплаты", "Webhook")
+
+Rel(paymentService, messageBroker, "PaymentSucceeded / PaymentFailed", "Event")
+Rel(messageBroker, orderService, "События платежей", "Event")
+
+Rel(orderService, messageBroker, "OrderCreated / OrderStatusChanged", "Event")
+Rel(messageBroker, notificationService, "События заказов", "Event")
+
+Rel(notificationService, notificationDb, "Хранит историю и статусы уведомлений", "SQL")
+Rel(notificationService, emailProvider, "Отправляет email", "HTTPS / API")
+
+SHOW_LEGEND()
+
+@enduml
