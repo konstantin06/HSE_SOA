@@ -5,6 +5,8 @@ Service-oriented architecture course at the Higher School of Economics
 
 Нужно спроектировать архитектуру маркетплейса, где продавцы размещают товары, а покупатели смотрят ленту, оформляют и оплачивают заказы.
 
+![C4 Container Diagram](docs/diagrams/container-c4.png)
+
 ## Архитектура
 
 Для маркетплейса выбрана микросервисная архитектура.
